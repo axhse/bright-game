@@ -1,0 +1,76 @@
+{
+  "en": {
+    "menu": {
+      "main-menu": "Main Menu",
+      "settings": "Settings",
+      "rules": "Rules",
+      "rating": "Rating",
+      "difficulty": "Difficulty",
+      "game-service": "Play"
+    },
+    "info": {
+      "bot-paused": "Bot is temporary paused",
+      "bot-working": "Bot is available now"
+    },
+    "admin": {
+      "bot-paused": "Paused",
+      "bot-working": "Working",
+      "server-stopping": "Server is on stopping",
+      "server-stopped": "Server is stopped",
+      "active-games": "Active games: {{count}}",
+      "total-log-count": "Total logs: {{count}}",
+      "log-count": "Log count: {{count}}",
+      "pause": "Pause bot",
+      "resume": "Resume bot",
+      "stop": "Stop server",
+      "logs": "Get logs"
+    },
+    "lang": {
+      "title": "Change language",
+      "en": "English",
+      "ru": "Russian"
+    },
+    "feedback": {
+      "title": "Feedback",
+      "offer": "Offer",
+      "complaint": "Complaint"
+    },
+    "game": {
+      "opponent-found": "Opponent found",
+      "opponents-found": "Opponents found",
+      "start-game": "Start game",
+      "game-result": "{{game}}: {{result}}",
+      "win": "Win",
+      "defeat": "Defeat",
+      "moves-made": "Moves made: {{moves}}",
+      "canceled": {
+        "title": "Game was cancelled",
+        "cause": "Cause: {{cause}}",
+        "bot-stopped": "Bot stopped",
+        "opponent-left": "Opponent left",
+        "timeout": "Game timeout"
+      },
+      "memory": {
+        "title": "Memory",
+        "progress": "Progress: {{removed}}/{{total}}",
+        "rules": "Just find all matching cards.",
+        "difficulty": {
+          "menu-title": "Select mode:",
+          "info": "Difficulty: {{value}}",
+          "value": "{{level}} ({{size}}, {{variety}})",
+          "levels": {
+            "easy": "Easy",
+            "normal": "Normal",
+            "difficult": "Difficult",
+            "hard": "Hard",
+            "extreme": "Extreme",
+            "insane": "Insane",
+            "custom": "Custom"
+          }
+        }
+      }
+    }
+  },
+  "ru": {
+  }
+}

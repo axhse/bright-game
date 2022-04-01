@@ -1,0 +1,36 @@
+{
+  "shift-symbol": "\u2796",
+  "empty-symbol": "\u2060",
+  "menu": {
+    "TEMP": {
+      "blue-diamond": "\uD83D\uDD39",
+      "minus": "\u2796",
+      "white-square": "\u25AB"
+    },
+    "navigate-back": "\u2B05",
+    "settings": "\u2699",
+    "feedback": "\uD83D\uDCAC",
+    "game-service": "\uD83C\uDFB2",
+    "rules": "\uD83D\uDCC4",
+    "rating": "\uD83D\uDCCA",
+    "difficulty": "\uD83E\uDDE9"
+  },
+  "info": {
+    "bot-paused": "\u23F8",
+    "bot-working": "\u2705"
+  },
+  "game": {
+    "win": "\uD83D\uDFE2",
+    "defeat": "\uD83D\uDFE1",
+    "draw": "",
+    "canceled": "",
+    "memory": {
+      "icon": "\uD83C\uDF20",
+      "hidden": "\u2754",
+      "removed": "\u2716",
+      "cards": ["\ud83c\udfb2", "\ud83d\udd11", "\ud83c\udfc0", "\ud83d\udcda", "\u23f0", "\ud83e\udde8",
+        "\ud83c\udfc6", "\u2744", "\ud83d\udd25", "\ud83d\udc2c", "\ud83d\udc25", "\ud83c\udf37",
+        "\ud83c\udf52", "\ud83c\udf47", "\ud83c\udf53", "\ud83c\udf55"]
+    }
+  }
+}
