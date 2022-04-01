@@ -1,6 +1,7 @@
 ## about
 
-BrightGame is a simple Telegram game bot.
+BrightGame is a simple Telegram game bot.  
+(dev branch: bot)
 
 ### General (current) features
 
