@@ -8,8 +8,7 @@ from game_service import GameService
 from utils.async_executor import IgnoringLimitedExecutor
 from utils.logger import Logger
 from utils.log_types import ExceptionLog, UnknownTypeLog
-from common_types import Player, Game, BotStatus, CallInfo
-from game_models.memory import MemoryModel    # FIXME: TEMP
+from common_types import Player, BotStatus, CallInfo
 
 
 class QueryHandler:
@@ -65,8 +64,6 @@ class QueryHandler:
     def _handle_message(self, message: Message):
         try:
             player = self._get_player_from_message(message)
-            if player.user_id != self._admin_user_id:   # FIXME: TEMP
-                return
             if self._is_paused:
                 if player.user_id != self._admin_user_id:
                     self._chat_bot.inform_bot_is_paused(player)
@@ -84,8 +81,6 @@ class QueryHandler:
     def _handle_callback(self, call: CallInfo):
         try:
             player = self._get_player_from_message(call.message)
-            if player.user_id != self._admin_user_id:   # FIXME: TEMP
-                return
             if self._is_paused:
                 if player.user_id != self._admin_user_id and call.source != 'game-service':
                     self._chat_bot.inform_bot_is_paused(player)
@@ -112,8 +107,6 @@ class QueryHandler:
                     pass    # TODO
                 if call.target == 'feedback':
                     pass    # TODO
-                if call.target == 'game-service':
-                    self._game_service.create_game([player], call)   # FIXME: TEMP
             self._bot.answer_callback_query(call.call_id)
         except Exception as exception:
             self._logger.add_log(ExceptionLog(exception, 'QueryHandler.handle_callback'))
@@ -135,6 +128,6 @@ class QueryHandler:
     @staticmethod
     def _get_player_from_message(message: Message):   # Do not use message.from_user.id
         lang = message.from_user.language_code
-        if lang not in ['en']:    # FIXME: ['en', 'ru']
+        if lang not in ['en']:
             lang = 'en'
         return Player(message.chat.id, lang)
