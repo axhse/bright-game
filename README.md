@@ -5,21 +5,23 @@ BrightGame is a simple Telegram game bot.
 
 ### General (current) features
 
-"Memory" game (with multiple difficulty levels) is avaliable to all users.
+Avaliable games:  
+1. "Memory" (supports multiple difficulty levels)  
+2. Demo-version of ["Halma"](https://en.wikipedia.org/wiki/Halma)  
 
 ### Admin tools
 
 Admin user has the ability to use /status command. Options:
 1. Pause/resume bot
 2. Stop bot
-3. Receive bot logs
+3. Request bot logs
 
-### Will be added soon
+### Last updates:
 
-1. More games
-2. Online games
-3. Russinan localization
+02/04: Halma-beta added
 
-### Will be added a little later that soon
+### Planned updates:
 
-1. Database implementation (player settings, game statistics)
+1. User-friendly pponent search
+2. More games
+3. Database implementation
