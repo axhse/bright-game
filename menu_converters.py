@@ -5,7 +5,7 @@ from data.game_data import GameData
 from common_types import CallInfo, Player
 
 
-def difficulty_info_from_call(player: Player, call: CallInfo, detailed=False):
+def difficulty_info_from_call(player: Player, call: CallInfo, all_detailed=False, custom_detailed=False):
     if call.parameter == 'memory':
         content = Content.get_content(player)['game']['memory']['difficulty']
         levels = GameData.get()['memory']['levels']
@@ -20,7 +20,7 @@ def difficulty_info_from_call(player: Player, call: CallInfo, detailed=False):
             if levels[key]['size'] == size and levels[key]['variety'] == variety:
                 level = key
                 break
-        if level == 'custom' or detailed:
+        if all_detailed or level == 'custom' and custom_detailed:
             value = Content.subs(content['value'], level=content['levels'][level], size=size, variety=variety)
         else:
             value = content['levels'][level]

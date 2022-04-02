@@ -94,7 +94,9 @@ class QueryHandler:
             if call.source == 'admin-menu' and player.user_id == self._admin_user_id:
                 self._handle_admin_callback(player, call)
             if call.source == 'game-service':
-                self._game_service.add_call(call)
+                self._game_service.add_click_call(call)
+            if call.source == 'game-pool':
+                self._game_service.add_pool_call(player, call)
             if call.action == 'navigate':
                 if call.target == 'main-menu':
                     self._chat_bot.display_main_menu(player)

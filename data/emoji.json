@@ -31,6 +31,13 @@
       "cards": ["\ud83c\udfb2", "\ud83d\udd11", "\ud83c\udfc0", "\ud83d\udcda", "\u23f0", "\ud83e\udde8",
         "\ud83c\udfc6", "\u2744", "\ud83d\udd25", "\ud83d\udc2c", "\ud83d\udc25", "\ud83c\udf37",
         "\ud83c\udf52", "\ud83c\udf47", "\ud83c\udf53", "\ud83c\udf55"]
+    },
+    "halma": {
+      "icon": "\uD83D\uDD33",
+      "player-piece": "\uD83D\uDD35",
+      "player-selected-piece": "\uD83D\uDFE3",
+      "opponent-piece": "\uD83D\uDFE1",
+      "opponent-selected-piece": "\uD83D\uDFE2"
     }
   }
 }

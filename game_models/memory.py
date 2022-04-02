@@ -28,7 +28,7 @@ class MemoryCard:
 
 class MemoryBoard:
     def __init__(self, values, rows=None, columns=None, variety=None):
-        self._table = [[MemoryCard(v) for v in row] for row in values]
+        self._board = [[MemoryCard(v) for v in row] for row in values]
         self.rows = rows
         self.columns = columns
         self.variety = variety
@@ -45,7 +45,7 @@ class MemoryBoard:
         return self.rows * self.columns
 
     def __getitem__(self, index_pair) -> MemoryCard:
-        return self._table[index_pair[0]][index_pair[1]]
+        return self._board[index_pair[0]][index_pair[1]]
 
 
 class MemoryModel:

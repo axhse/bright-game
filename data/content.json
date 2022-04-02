@@ -27,21 +27,24 @@
     },
     "lang": {
       "title": "Change language",
-      "en": "English",
-      "ru": "Russian"
+      "en": "English"
     },
     "feedback": {
-      "title": "Feedback",
-      "offer": "Offer",
-      "complaint": "Complaint"
+      "title": "Feedback"
     },
     "game": {
+      "opponent-searching-joined": "Finding an opponent ...",
+      "opponents-searching-joined": "Finding opponents ...",
+      "stop-searching": "Stop searching",
       "opponent-found": "Opponent found",
       "opponents-found": "Opponents found",
       "start-game": "Start game",
       "game-result": "{{game}}: {{result}}",
+      "game-ended": "Game ended",
       "win": "Win",
       "defeat": "Defeat",
+      "player-turn": "It's your turn",
+      "opponent-turn": "It's opponent's turn",
       "moves-made": "Moves made: {{moves}}",
       "canceled": {
         "title": "Game was cancelled",
@@ -68,9 +71,12 @@
             "custom": "Custom"
           }
         }
+      },
+      "halma": {
+        "title": "Halma",
+        "end-turn": "End turn",
+        "rules": "https://en.wikipedia.org/wiki/Halma#Play_sequence"
       }
     }
-  },
-  "ru": {
   }
 }

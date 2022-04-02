@@ -11,21 +11,24 @@ class Player:
 
 
 class Game(UniqueItem):
-    def __init__(self, model, players: list, is_online=False, duration_limit: int = None):
-        super().__init__(uid_length=32)
+    def __init__(self, model, players: list, duration_limit: int = None):
+        super().__init__(UniqueItem.random_uid(32))
         self.model = model
         self.players = players
-        self.is_online = is_online
+        self.is_online = len(players) > 1
         self.messages = {player: dict() for player in players}    # Dict: [str message_tag] = Message message
         self._is_synced = {player: False for player in players}    # Any callback received
         self._duration_limit = 32_000_000 if duration_limit is None else duration_limit    # Default 1 year
         self._create_time = time.time()
 
+    @property
+    def is_failed(self) -> bool:
+        return time.time() > self._create_time + self._duration_limit
+
     def sync(self, player, message, message_tag='main'):
         self.messages[player][message_tag] = message
         self._is_synced[player] = True
 
-    @property
     def is_synced(self, player=None) -> bool:
         if player is not None:
             return self._is_synced[player]
@@ -33,10 +36,6 @@ class Game(UniqueItem):
             if not self._is_synced[player]:
                 return False
         return True
-
-    @property
-    def is_failed(self) -> bool:
-        return time.time() > self._create_time + self._duration_limit
 
 
 class BotStatus:
