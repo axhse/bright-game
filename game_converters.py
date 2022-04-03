@@ -1,7 +1,6 @@
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from data.content import Content
-from data.game_data import GameData
+from data import content
 from common_types import Game
 from game_models.memory import MemoryModel
 from game_models.halma import HalmaModel
@@ -10,8 +9,8 @@ from game_models.halma import HalmaModel
 def game_difficulty(game: Game, player=None, all_detailed=False, custom_detailed=False):
     if type(game.model) is MemoryModel:
         player = game.players[0]
-        content = Content.get_content(player)['game']['memory']['difficulty']
-        levels = GameData.get()['memory']['levels']
+        messages = content.get_local(player.lang)['game']['memory']['difficulty']
+        levels = content.game_setup['memory']['levels']
         size = game.model.get_board().size
         variety = game.model.get_board().variety
         level = 'custom'
@@ -20,10 +19,10 @@ def game_difficulty(game: Game, player=None, all_detailed=False, custom_detailed
                 level = key
                 break
         if all_detailed or level == 'custom' and custom_detailed:
-            value = Content.subs(content['value'], level=content['levels'][level], size=size, variety=variety)
+            value = content.subs(messages['value'], level=messages['levels'][level], size=size, variety=variety)
         else:
-            value = content['levels'][level]
-        text = Content.subs(content['info'], value=value)
+            value = messages['levels'][level]
+        text = content.subs(messages['info'], value=value)
         return text
 
 
@@ -31,31 +30,32 @@ def game_moves_made(game: Game, player=None):
     if type(game.model) is MemoryModel:
         player = game.players[0]
         moves = game.model.total_moves
-        return Content.subs(Content.get_content(player)['game']['moves-made'], moves=moves)
+        return content.subs(content.get_local(player.lang)['game']['moves-made'], moves=moves)
     if type(game.model) is HalmaModel:
         moves = game.model.total_moves
-        return Content.subs(Content.get_content(player)['game']['moves-made'], moves=moves)
+        return content.subs(content.get_local(player.lang)['game']['moves-made'], moves=moves)
 
 
 def game_main_text(game: Game, player=None):
     if type(game.model) is MemoryModel:
-        content = Content.get_content(game.players[0])['game']
+        player = game.players[0]
+        messages = content.get_local(player.lang)['game']
         removed = game.model.total_removed
         size = game.model.get_board().size
-        text = Content.combine(game_difficulty(game),
+        text = content.combine(game_difficulty(game),
                                game_moves_made(game),
-                               Content.subs(content['memory']['progress'], removed=removed, total=size))
+                               content.subs(messages['memory']['progress'], removed=removed, total=size))
         return text
     if type(game.model) is HalmaModel:
         for player_id in range(len(game.players)):
             if game.players[player_id] == player:
-                content = Content.get_content(player)['game']
-                return content['player-turn'] if player_id == game.model.turn else content['opponent-turn']
+                messages = content.get_local(player.lang)['game']
+                return messages['player-turn'] if player_id == game.model.turn else messages['opponent-turn']
         return None
 
 
 def game_main_markup(game: Game, player=None):
-    emoji = Content.get_emoji()['game']
+    emoji = content.emoji['game']
     if type(game.model) is MemoryModel:
         emoji = emoji['memory']
         card_emoji = emoji['cards']
@@ -99,6 +99,6 @@ def game_main_markup(game: Game, player=None):
                                                             f':click:{game.uid}:{player_id},{a},{b}'))
                     markup.row(*buttons)
                 if game.model.can_end_turn(player_id):
-                    markup.row(InlineKeyboardButton(Content.get_content(player)['game']['halma']['end-turn'],
+                    markup.row(InlineKeyboardButton(content.get_local(player.lang)['game']['halma']['end-turn'],
                                                     callback_data=f'game-service:end-turn:{game.uid}:{player_id}'))
                 return markup

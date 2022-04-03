@@ -1,14 +1,13 @@
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from data.content import Content
-from data.game_data import GameData
+from data import content
 from common_types import CallInfo, Player
 
 
 def difficulty_info_from_call(player: Player, call: CallInfo, all_detailed=False, custom_detailed=False):
     if call.parameter == 'memory':
-        content = Content.get_content(player)['game']['memory']['difficulty']
-        levels = GameData.get()['memory']['levels']
+        messages = content.get_local(player.lang)['game']['memory']['difficulty']
+        levels = content.game_setup['memory']['levels']
         if 'w' in call.args and 'h' in call.args and 'variety' in call.args:
             size = int(call.args['w']) * int(call.args['h'])
             variety = int(call.args['variety'])
@@ -21,21 +20,21 @@ def difficulty_info_from_call(player: Player, call: CallInfo, all_detailed=False
                 level = key
                 break
         if all_detailed or level == 'custom' and custom_detailed:
-            value = Content.subs(content['value'], level=content['levels'][level], size=size, variety=variety)
+            value = content.subs(messages['value'], level=messages['levels'][level], size=size, variety=variety)
         else:
-            value = content['levels'][level]
-        text = Content.subs(content['info'], value=value)
+            value = messages['levels'][level]
+        text = content.subs(messages['info'], value=value)
         return text
 
 
 def difficulty_markup(player: Player, call: CallInfo):
     if call.parameter == 'memory':
-        content = Content.get_content(player)['game']['memory']['difficulty']
-        levels = GameData.get()['memory']['levels']
+        messages = content.get_local(player.lang)['game']['memory']['difficulty']
+        levels = content.game_setup['memory']['levels']
         markup = InlineKeyboardMarkup(row_width=5)
         for level in levels:
             h, w, variety = levels[level]['rows'], levels[level]['columns'], levels[level]['variety']
-            text = Content.subs(content['value'], level=content['levels'][level], size=h*w, variety=variety)
+            text = content.subs(messages['value'], level=messages['levels'][level], size=h*w, variety=variety)
             markup.add(InlineKeyboardButton(text,
                        callback_data=f'difficulty:navigate:game-menu:memory:h={h},w={w},variety={variety}'))
         return markup
