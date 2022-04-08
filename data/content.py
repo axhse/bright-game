@@ -42,8 +42,9 @@ def combine_with_dash(text: str) -> str:
 
 
 load_dotenv()
-game_setup = _load_json(path.join(environ['DATA_DIRECTORY'], 'game_setup.json'))
-emoji = _load_json(path.join(environ['DATA_DIRECTORY'], 'emoji.json'))
-all_text = _load_json(path.join(environ['DATA_DIRECTORY'], 'localization.json'))
+data_directory = '' if environ.get('DATA_DIRECTORY') is None else environ['DATA_DIRECTORY']
+game_setup = _load_json(path.join(data_directory, 'game_setup.json'))
+emoji = _load_json(path.join(data_directory, 'emoji.json'))
+all_text = _load_json(path.join(data_directory, 'localization.json'))
 __all__ = ['get_text', 'subs', 'combine', 'combine_with_dash',
            'game_setup', 'emoji', 'all_text']

@@ -114,7 +114,7 @@ class QueryHandler:
         if player is not None:
             return player
         lang = message.from_user.language_code
-        if lang not in ['en']:
+        if lang not in ['en', 'ru']:
             lang = 'en'
         player = Player(message.chat.id, lang)
         self._player_cache[player.user_id] = player

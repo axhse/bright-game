@@ -13,7 +13,8 @@ from utils.logger import Logger, StaticLogger
 load_dotenv()
 
 token = environ['BOT_TOKEN']
-admin_user_id = None if environ['ADMIN_USER_ID'] is None else int(environ['ADMIN_USER_ID'])
+admin_var = environ.get('ADMIN_USER_ID')
+admin_user_id = int(environ['ADMIN_USER_ID']) if admin_var is not None and admin_var.isnumeric() else None
 update_workers = int(environ['UPDATE_HANDLER_WORKERS'])
 callback_workers = int(environ['CALLBACK_HANDLER_WORKERS'])
 game_manager_workers = int(environ['GAME_MANAGER_WORKERS'])
