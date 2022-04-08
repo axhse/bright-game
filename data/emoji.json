@@ -1,21 +1,17 @@
 {
-  "shift-symbol": "\u2796",
+  "dash": "\u2796",
   "empty-symbol": "\u2060",
   "menu": {
-    "TEMP": {
-      "blue-diamond": "\uD83D\uDD39",
-      "minus": "\u2796",
-      "white-square": "\u25AB"
-    },
     "navigate-back": "\u2B05",
     "settings": "\u2699",
+    "lang": "\uD83D\uDD24",
     "feedback": "\uD83D\uDCAC",
     "game-service": "\uD83C\uDFB2",
     "rules": "\uD83D\uDCC4",
     "rating": "\uD83D\uDCCA",
     "difficulty": "\uD83E\uDDE9"
   },
-  "info": {
+  "admin": {
     "bot-paused": "\u23F8",
     "bot-working": "\u2705"
   },

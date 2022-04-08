@@ -1,52 +1,59 @@
 {
   "en": {
-    "menu": {
-      "main-menu": "Main Menu",
-      "settings": "Settings",
-      "rules": "Rules",
-      "rating": "Rating",
-      "difficulty": "Difficulty",
-      "game-service": "Play"
-    },
     "info": {
       "bot-paused": "Bot is temporary paused",
       "bot-working": "Bot is available now"
     },
-    "admin": {
+    "main-menu": {
+      "title": "Main Menu"
+    },
+    "admin-menu": {
+      "pause-bot": "Pause bot",
+      "resume-bot": "Resume bot",
+      "stop-server": "Stop server",
+      "load-logs": "Load logs",
       "bot-paused": "Paused",
       "bot-working": "Working",
-      "server-stopping": "Server is on stopping",
+      "server-stopping": "Server is stopping",
       "server-stopped": "Server is stopped",
       "active-games": "Active games: {{count}}",
       "total-log-count": "Total logs: {{count}}",
-      "log-count": "Log count: {{count}}",
-      "pause": "Pause bot",
-      "resume": "Resume bot",
-      "stop": "Stop server",
-      "logs": "Get logs"
+      "log-count": "Log count: {{count}}"
     },
-    "lang": {
-      "title": "Change language",
-      "en": "English"
+    "settings": {
+      "label": "Settings",
+      "title": "Settings",
+      "lang": {
+        "label": "Language",
+        "title": "Change language:",
+        "keys": {
+          "en": "English",
+          "ru": "Russian"
+        }
+      }
     },
-    "feedback": {
-      "title": "Feedback"
+    "game-menu": {
+      "play": "Play",
+      "rules": "Rules",
+      "rating": "Rating",
+      "difficulty": "Difficulty",
+      "finding-opponent": "Looking for an opponent ...",
+      "finding-opponents": "Looking for opponents ...",
+      "stop-searching": "Stop searching"
     },
     "game": {
-      "opponent-searching-joined": "Finding an opponent ...",
-      "opponents-searching-joined": "Finding opponents ...",
-      "stop-searching": "Stop searching",
-      "opponent-found": "Opponent found",
-      "opponents-found": "Opponents found",
-      "start-game": "Start game",
-      "game-result": "{{game}}: {{result}}",
-      "game-ended": "Game ended",
-      "win": "Win",
-      "defeat": "Defeat",
+      "ended": "Game ended",
       "player-turn": "It's your turn",
       "opponent-turn": "It's opponent's turn",
-      "moves-made": "Moves made: {{moves}}",
-      "canceled": {
+      "move-count": "Move count: {{moves}}",
+      "result":{
+        "message": "{{game}}: {{result}}",
+        "win": "Win",
+        "defeat": "Defeat",
+        "draw": "Draw",
+        "nameless": "Game ended"
+      },
+      "game-canceled": {
         "title": "Game was cancelled",
         "cause": "Cause: {{cause}}",
         "bot-stopped": "Bot stopped",
@@ -54,12 +61,12 @@
         "timeout": "Game timeout"
       },
       "memory": {
-        "title": "Memory",
-        "progress": "Progress: {{removed}}/{{total}}",
+        "name": "Memory",
+        "progress": "Progress: {{removed}}/{{size}}",
         "rules": "Just find all matching cards.",
         "difficulty": {
-          "menu-title": "Select mode:",
-          "info": "Difficulty: {{value}}",
+          "title": "Select mode:",
+          "message": "Difficulty: {{value}}",
           "value": "{{level}} ({{size}}, {{variety}})",
           "levels": {
             "easy": "Easy",
@@ -73,9 +80,96 @@
         }
       },
       "halma": {
-        "title": "Halma",
+        "name": "Halma",
         "end-turn": "End turn",
         "rules": "https://en.wikipedia.org/wiki/Halma#Play_sequence"
+      }
+    }
+  },
+  "ru": {
+    "info": {
+      "bot-paused": "Бот временно остановлен",
+      "bot-working": "Бот снова доступен"
+    },
+    "main-menu": {
+      "title": "Главное меню"
+    },
+    "admin-menu": {
+      "pause-bot": "Pause bot",
+      "resume-bot": "Resume bot",
+      "stop-server": "Stop server",
+      "load-logs": "Load logs",
+      "bot-paused": "Paused",
+      "bot-working": "Working",
+      "server-stopping": "Server is stopping",
+      "server-stopped": "Server stopped",
+      "active-games": "Active games: {{count}}",
+      "total-log-count": "Total logs: {{count}}",
+      "log-count": "Log count: {{count}}"
+    },
+    "settings": {
+      "label": "Настройки",
+      "title": "Настройки",
+      "lang": {
+        "label": "Язык",
+        "title": "\u0418зменить язык:",
+        "keys": {
+          "en": "English",
+          "ru": "Russian"
+        }
+      }
+    },
+    "game-menu": {
+      "play": "\u0418грать",
+      "rules": "Правила",
+      "rating": "Рейтинг",
+      "difficulty": "Уровень",
+      "finding-opponent": "Поиск соперника ...",
+      "finding-opponents": "Поиск соперников ...",
+      "stop-searching": "Остановить поиск"
+    },
+    "game": {
+      "ended": "\u0418гра завершена",
+      "player-turn": "Сейчас ваш ход",
+      "opponent-turn": "Сейчас ход соперника",
+      "move-count": "Всего ходов: {{moves}}",
+      "result":{
+        "message": "{{game}}: {{result}}",
+        "win": "Победа",
+        "defeat": "Поражение",
+        "draw": "Ничья",
+        "nameless": "\u0418гра завершена"
+      },
+      "game-canceled": {
+        "title": "\u0418гра отменена",
+        "cause": "Причина: {{cause}}",
+        "bot-stopped": "Бот остановлен",
+        "opponent-left": "Соперник вышел из игры",
+        "timeout": "Время игры истекло"
+      },
+      "memory": {
+        "name": "Memory",
+        "progress": "Прогресс: {{removed}}/{{size}}",
+        "rules": "Нужно найти все парные картинки.",
+        "difficulty": {
+          "title": "Выберете режим:",
+          "message": "Уровень: {{value}}",
+          "value": "{{level}} ({{size}}, {{variety}})",
+          "levels": {
+            "easy": "Легкий",
+            "normal": "Нормальный",
+            "difficult": "Сложный",
+            "hard": "Очень сложный",
+            "extreme": "Безумный",
+            "insane": "Невозможный",
+            "custom": "Пользовательский"
+          }
+        }
+      },
+      "halma": {
+        "name": "Halma",
+        "end-turn": "Закончить ход",
+        "rules": "https://ru.wikipedia.org/wiki/%D0%A5%D0%B0%D0%BB%D0%BC%D0%B0#%D0%A6%D0%B5%D0%BB%D1%8C_%D0%B8%D0%B3%D1%80%D1%8B"
       }
     }
   }

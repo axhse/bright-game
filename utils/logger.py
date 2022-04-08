@@ -1,5 +1,5 @@
 from threading import Lock
-from utils.log_types import LogReport, Log
+from utils.log_types import LogReport, Log, ExceptionLog
 
 
 class Logger:
@@ -37,3 +37,20 @@ class Logger:
     def clear(self):
         with self._lock:
             self._logs.clear()
+
+
+class StaticLogger:
+    logger = Logger()
+
+    @staticmethod
+    def set_logger(logger: Logger):
+        StaticLogger.logger = logger
+
+    @staticmethod
+    def exception_logged(func):  # Decorator
+        def execute_and_log(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except Exception as exception:
+                StaticLogger.logger.add_log(ExceptionLog(exception, func.__qualname__))
+        return execute_and_log

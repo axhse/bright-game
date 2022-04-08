@@ -5,22 +5,23 @@ from collections import deque
 
 from game_service_bot import GameServiceBot
 from utils.async_executor import BlockingLimitedExecutor
-from utils.unique_item_storage import UniqueItemLockingStorage
-from utils.queue_provider import QueueProvider
-from utils.logger import Logger
-from utils.log_types import ExceptionLog
-from common_types import CallInfo, Game, Player
+from utils.single_access_dict import SingleAccessDict
+from multiplayer_provider import MultiplayerProvider, PlayerConnection
+from utils.logger import StaticLogger
+from call import Call
+from player import Player
+from game import Game
+from game_models.models_enum import GameModels
 from game_models.memory import MemoryModel
 from game_models.halma import HalmaModel
 
 
 class GameService:
-    def __init__(self, bot: GameServiceBot, max_workers: int, logger: Logger):
+    def __init__(self, bot: GameServiceBot, max_workers: int):
         self._bot = bot
-        self._logger = logger
         self._executor = BlockingLimitedExecutor(max_workers)
-        self._player_pool = QueueProvider({'memory', 'halma'}, {'memory': 1, 'halma': 2})    # TODO: No hard code
-        self._active_games = UniqueItemLockingStorage()
+        self._multiplayer_provider = MultiplayerProvider()
+        self._active_games = SingleAccessDict()
         self._call_groups = dict()    # Dict: [game.uid] = deque of CallInfo
         self._games_to_start = Queue()
         self._pool_calls = Queue()
@@ -32,159 +33,148 @@ class GameService:
         self._is_stopping = False
 
     @property
-    def active_game_count(self):    # TODO: Test
+    def active_game_count(self):
         return self._active_games.count
 
-    def start(self):    # TODO: Test
+    def start(self):
         self._stopped_event.wait()
         with self._stop_lock:
             self._stopped_event.clear()
             Thread(target=self._process_forever).start()
 
-    def stop(self):    # TODO: Test
+    def stop(self):
         with self._stop_lock:
             self._is_stopping = True
             self._stopped_event.wait()
 
-    def add_pool_call(self, player: Player, call: CallInfo):    # FIXME: Move to online-service
-        try:
-            self._pool_calls.put((player, call))
-        except Exception as exception:
-            self._logger.add_log(ExceptionLog(exception, 'GameService.add_pool_call'))
+    @StaticLogger.exception_logged
+    def handle_connecting_call(self, player: Player, call: Call):
+        if call.args['action'] == 'connect':
+            if self._multiplayer_provider.try_connect(GameModels.from_key(call.args['game-key']),
+                                                      PlayerConnection(player, call)):
+                self._bot.update_connection_status(player, call)
+        if call.args['action'] == 'disconnect':
+            self._multiplayer_provider.try_disconnect(GameModels.from_key(call.args['game-key']),
+                                                      PlayerConnection(player, call))
+            self._bot.update_connection_status(player, call)
 
-    def add_click_call(self, call: CallInfo):    # TODO: Test
-        try:
-            with self._call_groups_lock:
-                is_relevant = call.target in self._call_groups    # call.target = game.uid
-                if is_relevant:
-                    self._call_groups[call.target].append(call)
-            if not is_relevant:
-                self._bot.delete_call_message(call)    # FIXME: Might be info message ?
-        except Exception as exception:
-            self._logger.add_log(ExceptionLog(exception, 'GameService.add_click_call'))
+    @StaticLogger.exception_logged
+    def add_game_call(self, call: Call):
+        with self._call_groups_lock:
+            try:
+                self._call_groups[call.args['game-id']].append(call)
+            except KeyError:
+                pass
+                # self._bot.delete_call_message(call)
 
-    def _process_forever(self):    # TODO: Test
-        try:
-            while True:
-                if self._is_stopping:
-                    time.sleep(0.5)    # Catching lost tasks (requested but not started)
-                    while self._executor.is_busy:
-                        time.sleep(0.2)
-                    ids = self._active_games.stored_ids
-                    for game_id in ids:
-                        self._executor.perform(self._cancel_acquired_active_game,
-                                               self._active_games.acquire_by_id(game_id), 'bot-stopped')
-                    while True:
-                        try:
-                            game = self._games_to_start.get(block=False)
-                            self._executor.perform(self._bot.cancel_game, game, 'bot-stopped')
-                        except Empty:
-                            break
-                    with self._call_groups_lock:
-                        self._call_groups.clear()
-                    self._stopped_event.set()
-                    break
-                self._executor.perform(self._handle_pool)
-                self._executor.perform(self._start_next_game)
-                ids = self._active_games.stored_ids
-                for game_id in ids:
-                    game = self._active_games.acquire_by_id_no_wait(game_id)
-                    if game is not None:
-                        if game.is_failed:
-                            self._cancel_acquired_active_game(game)    # TODO: Add cause
-                        else:
-                            self._executor.perform(self._process_game, game)
-        except Exception as exception:
-            self._logger.add_log(ExceptionLog(exception, 'GameService.process_forever'))
+    @StaticLogger.exception_logged
+    def _process_forever(self):
+        while True:
+            if self._is_stopping:
+                time.sleep(0.5)    # Catching lost tasks (requested but not started)
+                while self._executor.is_busy:
+                    time.sleep(0.2)
+                keys = self._active_games.stored_keys
+                for key in keys:
+                    self._executor.execute(self._cancel_acquired_active_game,
+                                           self._active_games.acquire_by_key(key), 'bot-stopped')
+                while True:
+                    try:
+                        game = self._games_to_start.get(block=False)
+                        self._executor.execute(self._bot.cancel_game, game, 'bot-stopped')
+                    except Empty:
+                        break
+                with self._call_groups_lock:
+                    self._call_groups.clear()
+                self._stopped_event.set()
+                break
+            self._executor.execute(self._handle_connections)
+            self._executor.execute(self._start_next_game)
+            keys = self._active_games.stored_keys
+            for key in keys:
+                game = self._active_games.acquire_by_key(key, wait=False)
+                if game is not None:
+                    if game.is_failed:
+                        self._cancel_acquired_active_game(game)    # TODO: Add cause
+                    else:
+                        self._executor.execute(self._process_game, game)
 
-    def _process_game(self, game):    # TODO : Test
-        try:
-            with self._call_groups_lock:
-                calls = self._call_groups[game.uid].copy()
-                self._call_groups[game.uid].clear()
-            while True:
-                try:
-                    call = calls.popleft()
-                except IndexError:
-                    break
-                if type(game.model) is MemoryModel:
-                    if not game.is_synced():
-                        game.sync(game.players[0], call.message)
-                    a, b = map(int, call.parameter.split(','))
-                    if game.model.try_select(a, b):
+    @StaticLogger.exception_logged
+    def _process_game(self, game):
+        with self._call_groups_lock:
+            calls = self._call_groups[game.uid].copy()
+            self._call_groups[game.uid].clear()
+        while True:
+            try:
+                call = calls.popleft()
+            except IndexError:
+                break
+            if game.model_type is GameModels.MEMORY:
+                a, b = int(call.args['a']), int(call.args['b'])
+                if game.model.try_select(a, b):
+                    self._bot.display_game_state(game)
+            if game.model_type is GameModels.HALMA:
+                if call.args['action'] == 'end-turn':
+                    if game.model.try_end_turn(int(call.args['p'])):
                         self._bot.display_game_state(game)
-                if type(game.model) is HalmaModel:
-                    if call.action == 'sync':
-                        game.sync(game.players[int(call.parameter)], call.message)
-                        self._bot.display_game_state(game, target_player=game.players[int(call.parameter)])
-                    if call.action == 'end-turn':
-                        if game.model.try_end_turn(int(call.parameter)):
-                            self._bot.display_game_state(game)
-                    if call.action == 'click':
-                        player_id, a, b = map(int, call.parameter.split(','))
-                        if game.model.try_click(player_id, a, b):
-                            self._bot.display_game_state(game)
-                if game.model.is_ended:
-                    self._remove_active_game(game)
-            self._active_games.release_by_id(game.uid)    # Multiple release is possible, but it's OK
-        except Exception as exception:
-            self._logger.add_log(ExceptionLog(exception, 'GameService.process_game'))
+                if call.args['action'] == 'click':
+                    player_index, a, b = int(call.args['p']), int(call.args['a']), int(call.args['b'])
+                    if game.model.try_click(player_index, a, b):
+                        self._bot.display_game_state(game)
+            if game.model.is_ended:
+                self._remove_active_game(game)
+        self._active_games.release_by_key(game.uid)    # Multiple release is possible, but it's OK
 
-    def _handle_pool(self):
-        try:
-            while True:
-                try:
-                    player, call = self._pool_calls.get(block=False)    # FIXME: Leave request
-                    if call.action == 'join':
-                        self._bot.inform_joined(player, call)
-                        if call.target in ['memory', 'halma']:    # TODO: No hard code
-                            self._player_pool.put(call.target, (player, call))
-                except Empty:
-                    break
-            while True:
-                group = self._player_pool.pop_group('memory')
-                if group is None:
-                    break
-                player, call = group[0]
-                model = MemoryModel(int(call.args['h']), int(call.args['w']), int(call.args['variety']))
-                game = Game(model, [player])
-                self._add_game(game)
-            while True:
-                group = self._player_pool.pop_group('halma')
-                if group is None:
-                    break
-                model = HalmaModel()
-                game = Game(model, [item[0] for item in group])
-                self._add_game(game)
-        except Exception as exception:
-            self._logger.add_log(ExceptionLog(exception, 'GameService.handle_pool'))
+    @StaticLogger.exception_logged
+    def _handle_connections(self):
+        while True:
+            connections = self._multiplayer_provider.pop_group(GameModels.MEMORY)
+            if connections is None:
+                break
+            player, call = connections[0].player, connections[0].call
+            model = MemoryModel(int(call.args['h']), int(call.args['w']), int(call.args['variety']))
+            game = Game(model, [player])
+            game.set_message(0, call.message)
+            self._add_game(game)
+        while True:
+            connections = self._multiplayer_provider.pop_group(GameModels.HALMA)
+            if connections is None:
+                break
+            model = HalmaModel()
+            game = Game(model, [connection.player for connection in connections])
+            for i in range(len(connections)):
+                connection = connections[i]
+                game.set_message(i, connection.call.message)
+            self._add_game(game)
 
-    def _add_game(self, game: Game):    # TODO: Cancel if stopped ?
-        try:
+    @StaticLogger.exception_logged
+    def _add_game(self, game: Game):
+        if self._is_stopping or self._stopped_event.is_set():
+            pass    # TODO
+        else:
             self._games_to_start.put(game)
-        except Exception as exception:
-            self._logger.add_log(ExceptionLog(exception, 'GameService.add_game'))
-    
-    def _start_next_game(self):    # TODO: Test
+
+    @StaticLogger.exception_logged
+    def _start_next_game(self):
         try:
             game = self._games_to_start.get(block=False)
             with self._call_groups_lock:
                 self._call_groups[game.uid] = deque()
-            self._active_games.add(game)
-            self._bot.start_game(game)
+            self._active_games.add(game.uid, game)
+            self._bot.display_game_state(game)
         except Empty:
             pass
-        except Exception as exception:
-            self._logger.add_log(ExceptionLog(exception, 'GameService.start_next_game'))
 
-    def _cancel_acquired_active_game(self, game, cause=None):    # TODO: Test
+    @StaticLogger.exception_logged
+    def _cancel_acquired_active_game(self, game, cause=None):
         self._bot.cancel_game(game, cause)
         self._remove_active_game(game)
 
-    def _remove_active_game(self, game, acquired=True):    # TODO: Test
+    @StaticLogger.exception_logged
+    def _remove_active_game(self, game, acquired=True):
         if not acquired:
-            if self._active_games.acquire_by_id(game.uid) is None:
+            if self._active_games.acquire_by_key(game.uid) is None:
                 return
         with self._call_groups_lock:
             self._call_groups.pop(game.uid)
-        self._active_games.release_by_id(game.uid, remove=True)
+        self._active_games.release_by_key(game.uid, remove=True)

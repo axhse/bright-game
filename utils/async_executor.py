@@ -37,14 +37,14 @@ class IgnoringLimitedExecutor:
     def resume(self):
         self._is_paused = False
 
-    def perform(self, target, *args):
+    def execute(self, target, *args, **kwargs):
         if self._is_paused:
             return
         if self._try_report_start():
-            def action(): return target(*args)
-            self._executor.submit(self._perform_and_report, action)
+            def action(): return target(*args, **kwargs)
+            self._executor.submit(self._execute_and_report, action)
 
-    def _perform_and_report(self, action):
+    def _execute_and_report(self, action):
         action()
         self._report_end()
 
@@ -98,13 +98,13 @@ class BlockingLimitedExecutor:
     def resume(self):
         self._resume_event.set()
 
-    def perform(self, target, *args):
+    def execute(self, target, *args, **kwargs):
         self._resume_event.wait()
         self._report_start()
-        def action(): return target(*args)
-        self._executor.submit(self._perform_and_report, action)
+        def action(): return target(*args, **kwargs)
+        self._executor.submit(self._execute_and_report, action)
 
-    def _perform_and_report(self, action):
+    def _execute_and_report(self, action):
         action()
         self._report_end()
 

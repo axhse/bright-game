@@ -1,136 +1,88 @@
-from telebot import TeleBot
-from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
-import game_converters as converters
-from utils.stubborn_executor import StubbornExecutor
-from utils.logger import Logger
-from utils.log_types import ExceptionLog
+from message_schemes.game_schemes import *
+from message_schemes.menu_schemes import GameMenu
+from utils.logger import StaticLogger
 from data import content
-from common_types import CallInfo, Game, Player
-from game_models.memory import MemoryModel
-from game_models.halma import HalmaModel
+from chat_bot import ChatBot
+from call import Call
+from player import Player
+from game import Game
+from game_models.models_enum import GameModels
 
 
 class GameServiceBot:
-    def __init__(self, bot: TeleBot, logger: Logger):
+    def __init__(self, bot: ChatBot):
         self._bot = bot
-        self._logger = logger
 
-    def inform_joined(self, player: Player, call: CallInfo):
-        try:
-            if call.target in ['halma']:
-                messages = content.get_local(player.lang)['game']
-                text = messages['opponent-searching-joined'] if call.target in ['halma'] \
-                    else messages['opponents-searching-joined']
-                self._send_message(player, text)
-        except Exception as exception:
-            self._logger.add_log(ExceptionLog(exception, 'GameServiceBot.inform_joined'))
+    @StaticLogger.exception_logged
+    def update_connection_status(self, player: Player, call: Call):
+        if GameModels.from_key(call.args['game-key']).value.PLAYER_COUNT == 1:
+            return
+        scheme = None
+        if call.args['action'] == 'connect':
+            scheme = OpponentSearch(player, call.args)
+        if call.args['action'] == 'disconnect':
+            scheme = GameMenu(player, call.args)
+        message = call.message
+        scheme.paste_to_message(message)
+        self._bot.update_message(message)
 
-    def inform_left(self, player: Player):
-        try:
-            self._send_message(player, content.get_local(player.lang)['game']['searching-left'])
-        except Exception as exception:
-            self._logger.add_log(ExceptionLog(exception, 'GameServiceBot.inform_left'))
-
-    def start_game(self, game: Game):
-        try:
-            if game.is_online:
-                for player_id in range(len(game.players)):
-                    player = game.players[player_id]
-                    messages = content.get_local(player.lang)['game']
-                    text = messages['opponent-found'] if len(game.players) == 2 else messages['opponents-found']
-                    markup = InlineKeyboardMarkup()
-                    markup.row(InlineKeyboardButton(messages['start-game'],
-                                                    callback_data=f'game-service:sync:{game.uid}:{player_id}'))
-                    self._send_message(player, text, markup)
+    @StaticLogger.exception_logged
+    def display_game_state(self, game: Game, target_player_index: int = None):
+        for player_index in range(game.player_count):
+            if target_player_index is not None and player_index != target_player_index:
+                continue
+            scheme = None
+            if game.model_type == GameModels.MEMORY:
+                scheme = MemoryMain(game)
+            if game.model_type == GameModels.HALMA:
+                scheme = HalmaMain(game, player_index)
+            if game.message_is_set(player_index, 'main'):
+                message = game.messages[player_index]['main']
+                scheme.paste_to_message(message)
+                self._bot.update_message(message)
             else:
-                self.display_game_state(game)
-        except Exception as exception:
-            self._logger.add_log(ExceptionLog(exception, 'GameServiceBot.start_game'))
+                self._bot.send_message(game.players[player_index], scheme)
+        if game.is_ended:
+            self.end_game(game)
 
-    def display_game_state(self, game: Game, target_player=None):
-        try:
-            for player in game.players:
-                if target_player is not None and player != target_player:
-                    continue
-                text = converters.game_main_text(game, player)
-                markup = converters.game_main_markup(game, player)
-                if game.is_synced(player):
-                    message = game.messages[player]['main']
-                    message.text = text
-                    message.reply_markup = markup
-                    self._update_message(message)
-                elif not game.is_online:
-                    self._send_message(player, text, markup)
-            if game.model.is_ended:    # FIXME: Don't use duck typing
-                self._end_game(game)
-                return
-        except Exception as exception:
-            self._logger.add_log(ExceptionLog(exception, 'GameServiceBot.display_game_state'))
+    @StaticLogger.exception_logged
+    def delete_call_message(self, call: Call):
+        self._bot.delete_message(call.message)
 
-    def cancel_game(self, game, cause=None):
-        try:
-            for player in game.players:
-                for message in game.messages[player].values():
-                    self._delete_message(message)
-                messages = content.get_local(player.lang)['game']['canceled']
-                text = messages['title']
-                if cause is not None:
-                    text = content.combine(text, content.subs(messages['cause'], cause=messages[cause]))
-                self._send_message(player, text)
-        except Exception as exception:
-            self._logger.add_log(ExceptionLog(exception, 'GameServiceBot.cancel_game'))
+    @StaticLogger.exception_logged
+    def end_game(self, game: Game):
+        for player_index in range(game.player_count):
+            player = game.players[player_index]
+            for message in game.messages[player_index].values():
+                if game.model_type in Game.DELETE_MESSAGES_WHEN_ENDED:
+                    self._bot.delete_message(message)
+                else:
+                    scheme = MessageScheme(content.get_text(player.lang, 'game', 'ended'))
+                    scheme.paste_to_message(message)
+                    self._bot.update_message(message)
+            scheme = None
+            if game.model_type == GameModels.MEMORY:
+                scheme = MemoryFinal(game)
+            if game.model_type == GameModels.HALMA:
+                scheme = HalmaFinal(game, player_index)
+            self._bot.send_message(player, scheme)
+            self._bot.send_message(player, GameMenu(player, {'game-key': game.model_type.key}))
 
-    def delete_call_message(self, call: CallInfo):
-        try:
-            self._delete_message(call.message)
-        except Exception as exception:
-            self._logger.add_log(ExceptionLog(exception, 'GameServiceBot.delete_call_message'))
-
-    def _end_game(self, game):
-        try:
-            if type(game.model) is MemoryModel:
-                player = game.players[0]
-                for message in game.messages[player].values():
-                    self._delete_message(message)
-                messages = content.get_local(player.lang)['game']
-                emoji = content.emoji['game']
-                main_line = content.subs(messages['game-result'], game=content.combine(emoji['memory']['icon'],
-                                         messages['memory']['title']), result=messages['win'])
-                text = content.combine(main_line, converters.game_difficulty(game, custom_detailed=True),
-                                       converters.game_moves_made(game))
-                self._send_message(player, text)
-            if type(game.model) is HalmaModel:
-                for player_id in range(len(game.players)):
-                    player = game.players[player_id]
-                    messages = content.get_local(player.lang)['game']
-                    for message in game.messages[player].values():
-                        message.text = messages['game-ended']
-                        self._update_message(message)
-                    emoji = content.emoji['game']
-                    result = messages['win'] if game.model.winner == player_id else messages['defeat']
-                    main_line = content.subs(messages['game-result'], game=content.combine(emoji['halma']['icon'],
-                                             messages['halma']['title']), result=result)
-                    text = content.combine(main_line, converters.game_moves_made(game, player))
-                    self._send_message(player, text)
-        except Exception as exception:
-            self._logger.add_log(ExceptionLog(exception, 'GameServiceBot.end_game'))
-
-    def _send_message(self, player: Player, text: str, markup: InlineKeyboardMarkup = None):
-        try:
-            self._bot.send_message(player.user_id, text, reply_markup=markup)
-        except Exception as exception:
-            self._logger.add_log(ExceptionLog(exception, 'GameServiceBot.send_message'))
-
-    def _delete_message(self, message: Message):
-        try:
-            self._bot.delete_message(message.chat.id, message.message_id)
-        except Exception as exception:
-            self._logger.add_log(ExceptionLog(exception, 'GameServiceBot.delete_message'))
-
-    def _update_message(self, message: Message):
-        try:
-            self._bot.edit_message_text(message.text, message.chat.id,
-                                        message.message_id, reply_markup=message.reply_markup)
-        except Exception as exception:
-            self._logger.add_log(ExceptionLog(exception, 'GameServiceBot.update_message'))
+    @StaticLogger.exception_logged
+    def cancel_game(self, game: Game, cause_key: str = None):
+        for player_index in range(game.player_count):
+            player = game.players[player_index]
+            text = content.get_text(player.lang, 'game', 'canceled')
+            for message in game.messages[player_index].values():
+                if game.model_type in Game.DELETE_MESSAGES_WHEN_ENDED:
+                    self._bot.delete_message(message)
+                else:
+                    scheme = MessageScheme(text['title'])
+                    scheme.paste_to_message(message)
+                    self._bot.update_message(message)
+            title = text['title']
+            if cause_key is not None:
+                title = content.combine(title, content.subs(text['cause'], cause=text[cause_key]))
+            scheme = MessageScheme(title)
+            self._bot.send_message(player, scheme)

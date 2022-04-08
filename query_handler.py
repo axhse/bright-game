@@ -3,131 +3,119 @@ from telebot import TeleBot
 from telebot.types import Message
 from threading import Thread, Lock
 
-from chat_bot import ChatBot
-from game_service import GameService
 from utils.async_executor import IgnoringLimitedExecutor
-from utils.logger import Logger
-from utils.log_types import ExceptionLog, UnknownTypeLog
-from common_types import Player, BotStatus, CallInfo
+from utils.logger import StaticLogger
+from data.cache import Cache
+from game_service import GameService
+from menu_bot import MenuBot
+from call import Call, CallSources
+from player import Player
+from bot_status import BotStatus
 
 
 class QueryHandler:
-    def __init__(self, bot: TeleBot, chat_bot: ChatBot, game_service: GameService, logger: Logger,
-                 admin_user_id: int, update_workers_count: int, callback_workers_count: int):
+    def __init__(self, bot: TeleBot, menu_bot: MenuBot, game_service: GameService,
+                 update_workers_count: int, callback_workers_count: int, admin_user_id: int = None):
         self._admin_user_id = admin_user_id
         self._bot = bot
-        self._chat_bot = chat_bot
+        self._menu_bot = menu_bot
         self._game_service = game_service
         self._update_executor = IgnoringLimitedExecutor(update_workers_count)
         self._callback_executor = IgnoringLimitedExecutor(callback_workers_count)
-        self._logger = logger
+        self._player_cache = Cache()
         self._bot.set_update_listener(self._handle_updates_async)
         self._bot.register_callback_query_handler(self._handle_callback_async, None)
         self._start_lock = Lock()
         self._is_paused = False
 
+    @StaticLogger.exception_logged
     def start(self):
-        try:
-            if not self._start_lock.acquire(blocking=False):
-                raise RuntimeError('Handler can be started only once.')
-            self._game_service.start()
-            self._bot.infinity_polling()
-        except Exception as exception:
-            self._logger.add_log(ExceptionLog(exception, 'QueryHandler.start'))
+        if not self._start_lock.acquire(blocking=False):
+            raise RuntimeError('Handler can be started only once.')
+        self._game_service.start()
+        self._bot.infinity_polling()
 
+    @StaticLogger.exception_logged
     def stop(self):
-        try:
-            self._bot.stop_polling()
-            self._update_executor.pause()
-            self._callback_executor.pause()
-            time.sleep(0.5)    # Catching lost tasks (requested but not started)
-            while self._update_executor.is_busy or self._callback_executor.is_busy:
-                time.sleep(0.2)
-            self._game_service.stop()
-            self._chat_bot.inform_server_is_stopped(Player(self._admin_user_id))
-        except Exception as exception:
-            self._logger.add_log(ExceptionLog(exception, 'QueryHandler.stop'))
+        if self._admin_user_id is not None:
+            self._menu_bot.inform_server_is_stopping(Player(self._admin_user_id))   # FIXME: From Cache
+        self._bot.stop_polling()
+        self._update_executor.pause()
+        self._callback_executor.pause()
+        time.sleep(0.5)    # Catching lost tasks (requested but not started)
+        while self._update_executor.is_busy or self._callback_executor.is_busy:
+            time.sleep(0.2)
+        self._game_service.stop()
+        if self._admin_user_id is not None:
+            self._menu_bot.inform_server_is_stopped(Player(self._admin_user_id))   # FIXME: TEMP
 
+    @StaticLogger.exception_logged
     def _handle_updates_async(self, updates):
         for update in updates:
-            if type(update) is not Message:
-                self._logger.add_log(UnknownTypeLog(f'type(update) is {type(update)}'))
-                continue
-            if update.content_type != 'text':
-                self._logger.add_log(UnknownTypeLog(f'update.content_type is {update.content_type}'))
-                continue
-            self._update_executor.perform(lambda: self._handle_message(update))
+            self._update_executor.execute(self._handle_message, update)
 
+    @StaticLogger.exception_logged
     def _handle_callback_async(self, callback_query):
-        self._callback_executor.perform(lambda: self._handle_callback(CallInfo(callback_query)))
+        self._callback_executor.execute(self._handle_callback, Call(callback_query))
 
+    @StaticLogger.exception_logged
     def _handle_message(self, message: Message):
-        try:
-            player = self._get_player_from_message(message)
-            if self._is_paused:
-                if player.user_id != self._admin_user_id:
-                    self._chat_bot.inform_bot_is_paused(player)
-                    return
-            command = self._chat_bot.get_command(message)
-            if player.user_id == self._admin_user_id:
-                if command == 'status':
-                    self._chat_bot.display_status(player, BotStatus(self._is_paused,
-                                                  self._game_service.active_game_count, self._logger.log_count))
-            if command == 'start':
-                self._chat_bot.display_main_menu(player)
-        except Exception as exception:
-            self._logger.add_log(ExceptionLog(exception, 'QueryHandler.handle_message'))
+        player = self._find_player_from_message(message)
+        if message.text == '/admin' and player.user_id == self._admin_user_id:
+            self._menu_bot.display_admin_menu(player, BotStatus(self._is_paused, self._game_service.active_game_count,
+                                                                StaticLogger.logger.log_count))
+        if self._is_paused and player.user_id != self._admin_user_id:
+            self._menu_bot.inform_bot_is_paused(player)
+        else:
+            self._menu_bot.reply_to_message(player, message)
 
-    def _handle_callback(self, call: CallInfo):
-        try:
-            player = self._get_player_from_message(call.message)
-            if self._is_paused:
-                if player.user_id != self._admin_user_id and call.source != 'game-service':
-                    self._chat_bot.inform_bot_is_paused(player)
-                    self._bot.answer_callback_query(call.call_id)
-                    return
-            if call.source == 'admin-menu' and player.user_id == self._admin_user_id:
+    @StaticLogger.exception_logged
+    def _handle_callback(self, call: Call):
+        player = self._find_player_from_message(call.message)
+        if self._is_paused and call.source != CallSources.GAME and player.user_id != self._admin_user_id:
+            self._menu_bot.inform_bot_is_paused(player)
+        else:
+            if call.source == CallSources.NAVIGATION:
+                self._menu_bot.reply_to_navigation(player, call)
+            if call.source == CallSources.UPDATE_PARAM:
+                self._menu_bot.reply_to_param_update(player, call)
+            if call.source == CallSources.GAME:
+                self._game_service.add_game_call(call)
+            if call.source == CallSources.CONNECTING:
+                self._game_service.handle_connecting_call(player, call)
+            if call.source == CallSources.ADMIN:
                 self._handle_admin_callback(player, call)
-            if call.source == 'game-service':
-                self._game_service.add_click_call(call)
-            if call.source == 'game-pool':
-                self._game_service.add_pool_call(player, call)
-            if call.action == 'navigate':
-                if call.target == 'main-menu':
-                    self._chat_bot.display_main_menu(player)
-                if call.target == 'game-menu':
-                    self._chat_bot.display_game_menu(player, call)
-                if call.target == 'difficulty':
-                    self._chat_bot.display_difficulty(player, call)
-                if call.target == 'settings':
-                    pass    # TODO
-                if call.target == 'rules':
-                    self._chat_bot.display_rules(player, call)
-                if call.target == 'rating':
-                    pass    # TODO
-                if call.target == 'feedback':
-                    pass    # TODO
             self._bot.answer_callback_query(call.call_id)
-        except Exception as exception:
-            self._logger.add_log(ExceptionLog(exception, 'QueryHandler.handle_callback'))
 
-    def _handle_admin_callback(self, player: Player, call: CallInfo):
-        try:
-            if call.action == 'pause-bot':
+    @StaticLogger.exception_logged
+    def _handle_admin_callback(self, player: Player, call: Call):
+        if player.user_id != self._admin_user_id:
+            return
+        if call.args['action'] == 'pause-bot':
+            if not self._is_paused:
                 self._is_paused = True
-            if call.action == 'resume-bot':
+                self._menu_bot.display_admin_menu(player, BotStatus(self._is_paused,
+                                                  self._game_service.active_game_count, StaticLogger.logger.log_count),
+                                                  call.message)
+        if call.args['action'] == 'resume-bot':
+            if self._is_paused:
                 self._is_paused = False
-            if call.action == 'stop-server':
-                Thread(target=self.stop).start()
-                self._chat_bot.inform_server_is_stopping(player)
-            if call.action == 'get-logs':
-                self._chat_bot.display_logs(player, self._logger.get_report())
-        except Exception as exception:
-            self._logger.add_log(ExceptionLog(exception, 'QueryHandler.handle_admin_callback'))
+                self._menu_bot.display_admin_menu(player, BotStatus(self._is_paused,
+                                                  self._game_service.active_game_count, StaticLogger.logger.log_count),
+                                                  call.message)
+        if call.args['action'] == 'stop-server':
+            Thread(target=self.stop).start()
+        if call.args['action'] == 'load-logs':
+            self._menu_bot.display_logs(player, StaticLogger.logger.get_report())
 
-    @staticmethod
-    def _get_player_from_message(message: Message):   # Do not use message.from_user.id
+    @StaticLogger.exception_logged
+    def _find_player_from_message(self, message: Message) -> Player:
+        player = self._player_cache[message.chat.id]
+        if player is not None:
+            return player
         lang = message.from_user.language_code
         if lang not in ['en']:
             lang = 'en'
-        return Player(message.chat.id, lang)
+        player = Player(message.chat.id, lang)
+        self._player_cache[player.user_id] = player
+        return player
