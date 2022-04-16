@@ -3,25 +3,31 @@
 BrightGames is a simple Telegram game bot.  
 (dev branch: bot)
 
-### General (current) features
+### Current features
 
 Avaliable games:  
 1. "Memory" (supports multiple difficulty levels)  
-2. Demo-version of ["Halma"](https://en.wikipedia.org/wiki/Halma)  
+2. ["Halma"](https://en.wikipedia.org/wiki/Halma) (multiplayer)  
 
-### Admin tools
+Use command /games or /start to open the main menu.  
 
-Admin user has the ability to use /status command. Options:
+#### Admin tools
+
+Admin user has the ability to use /admin command. Options:
 1. Pause/resume bot
-2. Stop bot
-3. Request bot logs
+2. Stop bot server
+3. Load bot logs
 
-### Last updates:
+### Installation
 
-02/04: Halma-beta added
+It's possible to use any bot to start BrightGames. The easiest way is to run docker container:
+```
+docker pull axhse/bright-games-bot:1.0
+docker run -d -e BOT_TOKEN= -e ADMIN_USER_ID= bot01 axhse/bright-games-bot:1.0
+```
+BOT_TOKEN must be specified. ADMIN_USER_ID setting is optional. You can also override other environment variables same way.
 
-### Planned updates:
+### Possible future updates:
 
-1. User-friendly opponent search
-2. More games
-3. Database implementation
+1. More games
+2. Game rating and player settings saving.
