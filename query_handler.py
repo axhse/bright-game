@@ -4,7 +4,8 @@ from telebot.types import Message
 from threading import Thread, Lock
 
 from utils.async_executor import IgnoringLimitedExecutor
-from utils.logger import StaticLogger
+from utils.logger import Logger, StaticLogger
+from utils.log_types import CriticalLog, ExceptionLog, WarningLog
 from data.cache import Cache
 from game_service import GameService
 from menu_bot import MenuBot
@@ -72,8 +73,10 @@ class QueryHandler:
     @StaticLogger.exception_logged
     def _handle_callback(self, call: Call):
         player = self._find_player_from_message(call.message)
-        if self._is_paused and call.source != CallSources.GAME and player.user_id != self._admin_user_id:
+        if self._is_paused and call.source not in [CallSources.GAME, CallSources.ADMIN] \
+                and player.user_id != self._admin_user_id:
             self._menu_bot.inform_bot_is_paused(player)
+            self._bot.answer_callback_query(call.call_id)
         else:
             if call.source == CallSources.NAVIGATION:
                 self._menu_bot.reply_to_navigation(player, call)
@@ -106,7 +109,8 @@ class QueryHandler:
         if call.args['action'] == 'stop-server':
             Thread(target=self.stop).start()
         if call.args['action'] == 'load-logs':
-            self._menu_bot.display_logs(player, StaticLogger.logger.get_report())
+            self._menu_bot.display_logs(player, StaticLogger.logger.get_report(
+                    Logger.type_rule(CriticalLog, ExceptionLog, WarningLog)))
 
     @StaticLogger.exception_logged
     def _find_player_from_message(self, message: Message) -> Player:

@@ -51,5 +51,10 @@ class MultiplayerProvider:
             except IndexError:
                 pass
 
-    def get_all_queue_connections(self):
-        pass    # TODO
+    def get_all_queue_connections(self) -> set:
+        connections = set()
+        with self._lock:
+            for game_model in self._queues:
+                for connection in self._queues[game_model]:
+                    connections.add(connection)
+        return connections

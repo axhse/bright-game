@@ -36,16 +36,23 @@ class GameService:
     def active_game_count(self):
         return self._active_games.count
 
+    @property
+    def is_active(self):
+        return not (self._is_stopping or self._stopped_event.is_set())
+
+    @StaticLogger.exception_logged
     def start(self):
         self._stopped_event.wait()
         with self._stop_lock:
             self._stopped_event.clear()
             Thread(target=self._process_forever).start()
 
+    @StaticLogger.exception_logged
     def stop(self):
         with self._stop_lock:
             self._is_stopping = True
             self._stopped_event.wait()
+            self._clear_all()
 
     @StaticLogger.exception_logged
     def handle_connecting_call(self, player: Player, call: Call):
@@ -71,22 +78,6 @@ class GameService:
     def _process_forever(self):
         while True:
             if self._is_stopping:
-                time.sleep(0.5)    # Catching lost tasks (requested but not started)
-                while self._executor.is_busy:
-                    time.sleep(0.2)
-                keys = self._active_games.stored_keys
-                for key in keys:
-                    self._executor.execute(self._cancel_acquired_active_game,
-                                           self._active_games.acquire_by_key(key), 'bot-stopped')
-                while True:
-                    try:
-                        game = self._games_to_start.get(block=False)
-                        self._executor.execute(self._bot.cancel_game, game, 'bot-stopped')
-                    except Empty:
-                        break
-                with self._call_groups_lock:
-                    self._call_groups.clear()
-                self._stopped_event.set()
                 break
             self._executor.execute(self._handle_connections)
             self._executor.execute(self._start_next_game)
@@ -98,6 +89,25 @@ class GameService:
                         self._cancel_acquired_active_game(game)    # TODO: Add cause
                     else:
                         self._executor.execute(self._process_game, game)
+
+    @StaticLogger.exception_logged
+    def _clear_all(self):
+        time.sleep(0.5)  # Catching lost tasks (requested but not started)
+        while self._executor.is_busy:
+            time.sleep(0.2)
+        keys = self._active_games.stored_keys
+        for key in keys:
+            self._executor.execute(self._cancel_acquired_active_game,
+                                   self._active_games.acquire_by_key(key), 'bot-stopped')
+        while True:
+            try:
+                game = self._games_to_start.get(block=False)
+                self._executor.execute(self._bot.cancel_game, game, 'bot-stopped')
+            except Empty:
+                break
+        with self._call_groups_lock:
+            self._call_groups.clear()
+        self._stopped_event.set()
 
     @StaticLogger.exception_logged
     def _process_game(self, game):

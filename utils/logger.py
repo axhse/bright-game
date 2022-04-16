@@ -19,38 +19,46 @@ class Logger:
     def add_log(self, log: Log):
         with self._lock:
             self._logs.append(log)
-        if self._allow_printing:
-            print(log)
+            if self._allow_printing:
+                log.print()
 
-    def get_report(self, begin_timestamp=0, end_timestamp=1e10, allowed_log_types=None) -> LogReport:
+    def get_report(self, *selection_rules) -> LogReport:
         logs = []
         with self._lock:
             for log in self._logs:
-                if begin_timestamp <= log.time <= end_timestamp:
-                    logs.append(log)
-        if allowed_log_types is not None:
-            for i in range(len(logs) - 1, -1, -1):
-                if logs[i].type not in allowed_log_types:
+                logs.append(log)
+        for i in range(len(logs) - 1, -1, -1):
+            for rule in selection_rules:
+                if not rule(logs[i]):
                     logs.pop(i)
-        return LogReport('\n'.join([str(log) for log in logs]), len(logs))
+                    break
+        return LogReport(logs)
 
     def clear(self):
         with self._lock:
             self._logs.clear()
+
+    @staticmethod
+    def period_rule(begin_timestamp: float = 0, end_timestamp: float = 1e10):
+        def period_is_correct(log: Log):
+            return begin_timestamp <= log.creation_time <= end_timestamp
+        return period_is_correct
+
+    @staticmethod
+    def type_rule(*allowed_log_types: type):
+        def type_is_correct(log: Log):
+            return type(log) in allowed_log_types
+        return type_is_correct
 
 
 class StaticLogger:
     logger = Logger()
 
     @staticmethod
-    def set_logger(logger: Logger):
-        StaticLogger.logger = logger
-
-    @staticmethod
-    def exception_logged(func):  # Decorator
+    def exception_logged(func):    # Decorator
         def execute_and_log(*args, **kwargs):
             try:
                 return func(*args, **kwargs)
             except Exception as exception:
-                StaticLogger.logger.add_log(ExceptionLog(exception, func.__qualname__))
+                StaticLogger.logger.add_log(ExceptionLog(exception, func_name=func.__qualname__))
         return execute_and_log

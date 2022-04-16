@@ -20,7 +20,7 @@ callback_workers = int(environ['CALLBACK_HANDLER_WORKERS'])
 game_manager_workers = int(environ['GAME_MANAGER_WORKERS'])
 
 bot = telebot.TeleBot(token)
-StaticLogger.set_logger(Logger(allow_printing=True))
+StaticLogger.logger = Logger(allow_printing=True)
 chat_bot = ChatBot(bot)
 game_service = GameService(GameServiceBot(chat_bot), game_manager_workers)
 handler = QueryHandler(bot, MenuBot(chat_bot), game_service, update_workers, callback_workers, admin_user_id)

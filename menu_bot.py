@@ -83,7 +83,7 @@ class MenuBot:
 
     @StaticLogger.exception_logged
     def inform_bot_is_paused(self, player: Player):
-        self._bot.send_message(player, MessageScheme(content.get_text(player.lang, 'info', 'paused')))
+        self._bot.send_message(player, MessageScheme(content.get_text(player.lang, 'info', 'bot-paused')))
 
     @StaticLogger.exception_logged
     def inform_server_is_stopping(self, player: Player):
