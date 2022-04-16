@@ -9,7 +9,9 @@ Avaliable games:
 1. "Memory" (supports multiple difficulty levels)  
 2. ["Halma"](https://en.wikipedia.org/wiki/Halma) (multiplayer)  
 
-Use command /games or /start to open the main menu.  
+Use command /games or /start to open the main menu. 
+
+<img src="img/memory.jpg" width="360"/> <img src="img/halma.jpg" width="360"/>
 
 #### Admin tools
 
@@ -17,6 +19,8 @@ Admin user has the ability to use /admin command. Options:
 1. Pause/resume bot
 2. Stop bot server
 3. Load bot logs
+
+<img src="img/admin.jpg" width="360"/>
 
 ### Installation
 
