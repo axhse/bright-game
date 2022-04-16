@@ -81,7 +81,7 @@ class AdminMenu(MessageScheme):
                    ButtonScheme(text['resume-bot'], f'{CallSources.ADMIN.value}:action=resume-bot'),
                    ButtonScheme(text['stop-server'], f'{CallSources.ADMIN.value}:action=stop-server'),
                    ButtonScheme(text['load-logs'], f'{CallSources.ADMIN.value}:action=load-logs'))
-        key = 'bot-paused' if status.is_paused else 'bot-working'
+        key = 'bot-paused' if status.is_paused else 'bot-active'
         label = content.combine(emoji[key], text[key])
         if status.active_game_count is not None:
             label = content.combine(label, content.subs(text['active-games'], count=status.active_game_count))

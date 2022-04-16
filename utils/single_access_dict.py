@@ -41,7 +41,7 @@ class SingleAccessDict:
                 else:
                     if self._item_locks[key].acquire(blocking=False):
                         item = self._items[key]
-        if not wait and lock is not None:
+        if wait and lock is not None:
             lock.acquire()
             item = self._items[key]
         return item

@@ -1,6 +1,5 @@
 import time
 from threading import Thread, Lock, Event
-from queue import Queue, Empty
 from collections import deque
 
 from game_service_bot import GameServiceBot
@@ -23,10 +22,7 @@ class GameService:
         self._multiplayer_provider = MultiplayerProvider()
         self._active_games = SingleAccessDict()
         self._call_groups = dict()    # Dict: [game.uid] = deque of CallInfo
-        self._games_to_start = Queue()
-        self._pool_calls = Queue()
         self._call_groups_lock = Lock()
-        self._counter_lock = Lock()
         self._stop_lock = Lock()
         self._stopped_event = Event()
         self._stopped_event.set()
@@ -52,7 +48,6 @@ class GameService:
         with self._stop_lock:
             self._is_stopping = True
             self._stopped_event.wait()
-            self._clear_all()
 
     @StaticLogger.exception_logged
     def handle_connecting_call(self, player: Player, call: Call):
@@ -78,35 +73,28 @@ class GameService:
     def _process_forever(self):
         while True:
             if self._is_stopping:
+                self._clear_all()
                 break
             self._executor.execute(self._handle_connections)
-            self._executor.execute(self._start_next_game)
             keys = self._active_games.stored_keys
             for key in keys:
                 game = self._active_games.acquire_by_key(key, wait=False)
                 if game is not None:
-                    if game.is_failed:
-                        self._cancel_acquired_active_game(game)    # TODO: Add cause
-                    else:
-                        self._executor.execute(self._process_game, game)
+                    self._executor.execute(self._process_game, game)
 
     @StaticLogger.exception_logged
     def _clear_all(self):
         time.sleep(0.5)  # Catching lost tasks (requested but not started)
         while self._executor.is_busy:
             time.sleep(0.2)
+        for connection in self._multiplayer_provider.get_all_connections():
+            self._bot.disconnect(connection.player, connection.call)
+        self._multiplayer_provider.clear()
         keys = self._active_games.stored_keys
         for key in keys:
-            self._executor.execute(self._cancel_acquired_active_game,
-                                   self._active_games.acquire_by_key(key), 'bot-stopped')
-        while True:
-            try:
-                game = self._games_to_start.get(block=False)
-                self._executor.execute(self._bot.cancel_game, game, 'bot-stopped')
-            except Empty:
-                break
-        with self._call_groups_lock:
-            self._call_groups.clear()
+            game = self._active_games.acquire_by_key(key)
+            if game is not None:
+                self._executor.execute(self._cancel_acquired_active_game, game, 'bot-stopped')
         self._stopped_event.set()
 
     @StaticLogger.exception_logged
@@ -145,7 +133,7 @@ class GameService:
             model = MemoryModel(int(call.args['h']), int(call.args['w']), int(call.args['variety']))
             game = Game(model, [player])
             game.set_message(0, call.message)
-            self._add_game(game)
+            self._start_game(game)
         while True:
             connections = self._multiplayer_provider.pop_group(GameModels.HALMA)
             if connections is None:
@@ -155,25 +143,14 @@ class GameService:
             for i in range(len(connections)):
                 connection = connections[i]
                 game.set_message(i, connection.call.message)
-            self._add_game(game)
+            self._start_game(game)
 
     @StaticLogger.exception_logged
-    def _add_game(self, game: Game):
-        if self._is_stopping or self._stopped_event.is_set():
-            pass    # TODO
-        else:
-            self._games_to_start.put(game)
-
-    @StaticLogger.exception_logged
-    def _start_next_game(self):
-        try:
-            game = self._games_to_start.get(block=False)
-            with self._call_groups_lock:
-                self._call_groups[game.uid] = deque()
-            self._active_games.add(game.uid, game)
-            self._bot.display_game_state(game)
-        except Empty:
-            pass
+    def _start_game(self, game):
+        with self._call_groups_lock:
+            self._call_groups[game.uid] = deque()
+        self._active_games.add(game.uid, game)
+        self._bot.display_game_state(game)
 
     @StaticLogger.exception_logged
     def _cancel_acquired_active_game(self, game, cause=None):

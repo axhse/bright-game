@@ -13,7 +13,7 @@
   },
   "admin": {
     "bot-paused": "\u23F8",
-    "bot-working": "\u2705"
+    "bot-active": "\u2705"
   },
   "game": {
     "win": "\uD83D\uDFE2",

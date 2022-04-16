@@ -2,7 +2,7 @@
   "en": {
     "info": {
       "bot-paused": "Bot is temporary paused",
-      "bot-working": "Bot is available now"
+      "bot-active": "Bot is available now"
     },
     "main-menu": {
       "title": "Main Menu"
@@ -13,7 +13,7 @@
       "stop-server": "Stop server",
       "load-logs": "Load logs",
       "bot-paused": "Paused",
-      "bot-working": "Working",
+      "bot-active": "Active",
       "server-stopping": "Server is stopping",
       "server-stopped": "Server is stopped",
       "active-games": "Active games: {{count}}",
@@ -53,7 +53,7 @@
         "draw": "Draw",
         "nameless": "Game ended"
       },
-      "game-canceled": {
+      "canceled": {
         "title": "Game was cancelled",
         "cause": "Cause: {{cause}}",
         "bot-stopped": "Bot stopped",
@@ -132,7 +132,7 @@
       "ended": "\u0418гра завершена",
       "player-turn": "Сейчас ваш ход",
       "opponent-turn": "Сейчас ход соперника",
-      "move-count": "Всего ходов: {{moves}}",
+      "move-count": "Количество ходов: {{moves}}",
       "result":{
         "message": "{{game}}: {{result}}",
         "win": "Победа",

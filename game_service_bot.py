@@ -1,4 +1,3 @@
-
 from message_schemes.game_schemes import *
 from message_schemes.menu_schemes import GameMenu
 from utils.logger import StaticLogger
@@ -23,6 +22,13 @@ class GameServiceBot:
             scheme = OpponentSearch(player, call.args)
         if call.args['action'] == 'disconnect':
             scheme = GameMenu(player, call.args)
+        message = call.message
+        scheme.paste_to_message(message)
+        self._bot.update_message(message)
+
+    @StaticLogger.exception_logged
+    def disconnect(self, player: Player, call: Call):
+        scheme = GameMenu(player, call.args)
         message = call.message
         scheme.paste_to_message(message)
         self._bot.update_message(message)

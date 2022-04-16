@@ -30,7 +30,7 @@ class MultiplayerProvider:
             for i in range(len(self._queues[game_model])):
                 if self._queues[game_model][i].equals(connection):
                     return False
-            self._queues[game_model].append(connection)    # FIXME: Check before adding
+            self._queues[game_model].append(connection)
             if len(self._queues[game_model]) >= game_model.value.PLAYER_COUNT:
                 self._groups[game_model].append(self._queues[game_model].copy())
                 self._queues[game_model].clear()
@@ -51,10 +51,19 @@ class MultiplayerProvider:
             except IndexError:
                 pass
 
-    def get_all_queue_connections(self) -> set:
+    def get_all_connections(self) -> set:
         connections = set()
         with self._lock:
             for game_model in self._queues:
                 for connection in self._queues[game_model]:
                     connections.add(connection)
+            for game_model in self._groups:
+                for group in self._groups[game_model]:
+                    for connection in group:
+                        connections.add(connection)
         return connections
+
+    def clear(self):
+        with self._lock:
+            self._queues.clear()
+            self._groups.clear()

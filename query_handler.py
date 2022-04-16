@@ -4,8 +4,7 @@ from telebot.types import Message
 from threading import Thread, Lock
 
 from utils.async_executor import IgnoringLimitedExecutor
-from utils.logger import Logger, StaticLogger
-from utils.log_types import CriticalLog, ExceptionLog, WarningLog
+from utils.logger import StaticLogger
 from data.cache import Cache
 from game_service import GameService
 from menu_bot import MenuBot
@@ -39,7 +38,7 @@ class QueryHandler:
     @StaticLogger.exception_logged
     def stop(self):
         if self._admin_user_id is not None:
-            self._menu_bot.inform_server_is_stopping(Player(self._admin_user_id))   # FIXME: From Cache
+            self._menu_bot.inform_server_is_stopping(self._player_cache[self._admin_user_id])   # FIXME: not in cache?
         self._bot.stop_polling()
         self._update_executor.pause()
         self._callback_executor.pause()
@@ -48,7 +47,7 @@ class QueryHandler:
             time.sleep(0.2)
         self._game_service.stop()
         if self._admin_user_id is not None:
-            self._menu_bot.inform_server_is_stopped(Player(self._admin_user_id))   # FIXME: TEMP
+            self._menu_bot.inform_server_is_stopped(self._player_cache[self._admin_user_id])   # FIXME: not in cache?
 
     @StaticLogger.exception_logged
     def _handle_updates_async(self, updates):
@@ -109,8 +108,7 @@ class QueryHandler:
         if call.args['action'] == 'stop-server':
             Thread(target=self.stop).start()
         if call.args['action'] == 'load-logs':
-            self._menu_bot.display_logs(player, StaticLogger.logger.get_report(
-                    Logger.type_rule(CriticalLog, ExceptionLog, WarningLog)))
+            self._menu_bot.display_logs(player, StaticLogger.logger.get_report())
 
     @StaticLogger.exception_logged
     def _find_player_from_message(self, message: Message) -> Player:

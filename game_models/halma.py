@@ -161,14 +161,20 @@ class HalmaModel(GameModel):
                     first_won = False
                 if i + j > 10 and self._board[i, j].color != 1:
                     second_won = False
-        if first_won:
-            self._end(self._get_results(winner_id=0))
-        if second_won:
-            self._end(self._get_results(winner_id=1))
+        if first_won and second_won:    # Actually impossible
+            self._end(self._get_results(draw=True))
+        else:
+            if first_won:
+                self._end(self._get_results(winner_id=0))
+            if second_won:
+                self._end(self._get_results(winner_id=1))
 
-    def _get_results(self, winner_id: int) -> list:
+    def _get_results(self, winner_id: int = None, draw: bool = False) -> list:
         results = []
         for player_index in [0, 1]:
-            status = ResultStatus.WIN if player_index == winner_id else ResultStatus.DEFEAT
+            if draw:
+                status = ResultStatus.DRAW
+            else:
+                status = ResultStatus.WIN if player_index == winner_id else ResultStatus.DEFEAT
             results.append(HalmaResult(status=status, move_count=self._move_count))
         return results

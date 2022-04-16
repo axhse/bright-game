@@ -1,4 +1,3 @@
-import time
 import random
 from game_models.game_model import GameModel
 from game_models.models_enum import GameModels
@@ -7,12 +6,10 @@ from game_models.models_enum import GameModels
 class Game:
     DELETE_MESSAGES_WHEN_ENDED = {GameModels.MEMORY}
 
-    def __init__(self, model: GameModel, players: list, duration_limit: int = None):
+    def __init__(self, model: GameModel, players: list):
         self.model = model
         self.players = players
         self.messages = [dict() for _ in range(self.player_count)]    # Dict: [str message_tag] = Message message
-        self.duration_limit = 32_000_000 if duration_limit is None else duration_limit    # Default 1 year
-        self._creation_time = time.time()
         self._uid = Game._random_uid()
 
     @property
@@ -26,10 +23,6 @@ class Game:
     @property
     def player_count(self) -> int:
         return len(self.players)
-
-    @property
-    def is_failed(self) -> bool:
-        return time.time() > self._creation_time + self.duration_limit
 
     @property
     def is_ended(self) -> bool:
