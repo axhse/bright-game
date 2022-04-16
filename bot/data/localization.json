@@ -1,0 +1,176 @@
+{
+  "en": {
+    "info": {
+      "bot-paused": "Bot is temporary paused",
+      "bot-active": "Bot is available now"
+    },
+    "main-menu": {
+      "title": "Main Menu"
+    },
+    "admin-menu": {
+      "pause-bot": "Pause bot",
+      "resume-bot": "Resume bot",
+      "stop-server": "Stop server",
+      "load-logs": "Load logs",
+      "bot-paused": "Paused",
+      "bot-active": "Active",
+      "server-stopping": "Server is stopping",
+      "server-stopped": "Server is stopped",
+      "active-games": "Active games: {{count}}",
+      "total-log-count": "Total logs: {{count}}",
+      "log-count": "Log count: {{count}}"
+    },
+    "settings": {
+      "label": "Settings",
+      "title": "Settings",
+      "lang": {
+        "label": "Language",
+        "title": "Change language:",
+        "keys": {
+          "en": "English",
+          "ru": "Russian"
+        }
+      }
+    },
+    "game-menu": {
+      "play": "Play",
+      "rules": "Rules",
+      "rating": "Rating",
+      "difficulty": "Difficulty",
+      "finding-opponent": "Looking for an opponent ...",
+      "finding-opponents": "Looking for opponents ...",
+      "stop-searching": "Stop searching"
+    },
+    "game": {
+      "ended": "Game ended",
+      "player-turn": "It's your turn",
+      "opponent-turn": "It's opponent's turn",
+      "move-count": "Move count: {{moves}}",
+      "result":{
+        "message": "{{game}}: {{result}}",
+        "win": "Win",
+        "defeat": "Defeat",
+        "draw": "Draw",
+        "nameless": "Game ended"
+      },
+      "canceled": {
+        "title": "Game was cancelled",
+        "cause": "Cause: {{cause}}",
+        "bot-stopped": "Bot stopped",
+        "opponent-left": "Opponent left",
+        "timeout": "Game timeout"
+      },
+      "memory": {
+        "name": "Memory",
+        "progress": "Progress: {{removed}}/{{size}}",
+        "rules": "Just find all matching cards.",
+        "difficulty": {
+          "title": "Select mode:",
+          "message": "Difficulty: {{value}}",
+          "value": "{{level}} ({{size}}, {{variety}})",
+          "levels": {
+            "easy": "Easy",
+            "normal": "Normal",
+            "difficult": "Difficult",
+            "hard": "Hard",
+            "extreme": "Extreme",
+            "insane": "Insane",
+            "custom": "Custom"
+          }
+        }
+      },
+      "halma": {
+        "name": "Halma",
+        "end-turn": "End turn",
+        "rules": "https://en.wikipedia.org/wiki/Halma#Play_sequence"
+      }
+    }
+  },
+  "ru": {
+    "info": {
+      "bot-paused": "Бот временно остановлен",
+      "bot-working": "Бот снова доступен"
+    },
+    "main-menu": {
+      "title": "Главное меню"
+    },
+    "admin-menu": {
+      "pause-bot": "Pause bot",
+      "resume-bot": "Resume bot",
+      "stop-server": "Stop server",
+      "load-logs": "Load logs",
+      "bot-paused": "Paused",
+      "bot-working": "Working",
+      "server-stopping": "Server is stopping",
+      "server-stopped": "Server stopped",
+      "active-games": "Active games: {{count}}",
+      "total-log-count": "Total logs: {{count}}",
+      "log-count": "Log count: {{count}}"
+    },
+    "settings": {
+      "label": "Настройки",
+      "title": "Настройки",
+      "lang": {
+        "label": "Язык",
+        "title": "\u0418зменить язык:",
+        "keys": {
+          "en": "English",
+          "ru": "Russian"
+        }
+      }
+    },
+    "game-menu": {
+      "play": "\u0418грать",
+      "rules": "Правила",
+      "rating": "Рейтинг",
+      "difficulty": "Уровень",
+      "finding-opponent": "Поиск соперника ...",
+      "finding-opponents": "Поиск соперников ...",
+      "stop-searching": "Остановить поиск"
+    },
+    "game": {
+      "ended": "\u0418гра завершена",
+      "player-turn": "Сейчас ваш ход",
+      "opponent-turn": "Сейчас ход соперника",
+      "move-count": "Количество ходов: {{moves}}",
+      "result":{
+        "message": "{{game}}: {{result}}",
+        "win": "Победа",
+        "defeat": "Поражение",
+        "draw": "Ничья",
+        "nameless": "\u0418гра завершена"
+      },
+      "game-canceled": {
+        "title": "\u0418гра отменена",
+        "cause": "Причина: {{cause}}",
+        "bot-stopped": "Бот остановлен",
+        "opponent-left": "Соперник вышел из игры",
+        "timeout": "Время игры истекло"
+      },
+      "memory": {
+        "name": "Memory",
+        "progress": "Прогресс: {{removed}}/{{size}}",
+        "rules": "Нужно найти все парные картинки.",
+        "difficulty": {
+          "title": "Выберете режим:",
+          "message": "Уровень: {{value}}",
+          "value": "{{level}} ({{size}}, {{variety}})",
+          "levels": {
+            "easy": "Легкий",
+            "normal": "Нормальный",
+            "difficult": "Сложный",
+            "hard": "Очень сложный",
+            "extreme": "Экстремальный",
+            "insane": "Безумный",
+            "custom": "Пользовательский"
+          }
+        }
+      },
+      "halma": {
+        "name": "Halma",
+        "end-turn": "Закончить ход",
+        "rules": "https://ru.wikipedia.org/wiki/%D0%A5%D0%B0%D0%BB%D0%BC%D0%B0#%D0%A6%D0%B5%D0%BB%D1%8C_%D0%B8%D0%B3%D1%80%D1%8B"
+      }
+    }
+  }
+}

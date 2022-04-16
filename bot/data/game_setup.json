@@ -1,0 +1,42 @@
+{
+  "memory": {
+    "levels": {
+      "easy": {
+        "rows": 3,
+        "columns": 4,
+        "size": 12,
+        "variety": 6
+      },
+      "normal": {
+        "rows": 3,
+        "columns": 6,
+        "size": 18,
+        "variety": 9
+      },
+      "difficult": {
+        "rows": 4,
+        "columns": 6,
+        "size": 24,
+        "variety": 12
+      },
+      "hard": {
+        "rows": 5,
+        "columns": 6,
+        "size": 30,
+        "variety": 15
+      },
+      "extreme": {
+        "rows": 6,
+        "columns": 7,
+        "size": 42,
+        "variety": 16
+      },
+      "insane": {
+        "rows": 8,
+        "columns": 8,
+        "size": 64,
+        "variety": 16
+      }
+    }
+  }
+}
